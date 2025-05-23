@@ -42,38 +42,21 @@ export default function AvatarSection() {
   useEffect(() => {
     const handleSpeechStart = () => {
       setIsSpeaking(true);
+      // Set a realistic duration for the animation (will be adjusted by actual audio)
+      setTimeout(() => setIsSpeaking(false), 5000);
     };
 
     const handleSpeechEnd = () => {
       setIsSpeaking(false);
     };
 
-    // Listen for speech synthesis events
-    const handleSpeechSynthesis = () => {
-      if ('speechSynthesis' in window) {
-        // Listen for when speech starts and ends
-        const checkSpeaking = () => {
-          if (window.speechSynthesis.speaking) {
-            setIsSpeaking(true);
-          } else {
-            setIsSpeaking(false);
-          }
-        };
-        
-        const interval = setInterval(checkSpeaking, 100);
-        return () => clearInterval(interval);
-      }
-    };
-
     // Listen for custom events from the chat interface
     window.addEventListener('ai-speaking', handleSpeechStart);
-    
-    // Start monitoring speech synthesis
-    const cleanup = handleSpeechSynthesis();
+    window.addEventListener('ai-speech-end', handleSpeechEnd);
 
     return () => {
       window.removeEventListener('ai-speaking', handleSpeechStart);
-      cleanup?.();
+      window.removeEventListener('ai-speech-end', handleSpeechEnd);
     };
   }, []);
 

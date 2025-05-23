@@ -7,6 +7,51 @@ interface WebSocketMessage {
   referencedDocuments?: string[];
 }
 
+// ElevenLabs voice synthesis function
+async function speakWithElevenLabs(text: string) {
+  try {
+    const response = await fetch('/api/voice/synthesize', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text }),
+    });
+
+    if (!response.ok) {
+      console.warn('ElevenLabs synthesis failed, falling back to browser speech');
+      fallbackToWebSpeech(text);
+      return;
+    }
+
+    const audioBlob = await response.blob();
+    const audioUrl = URL.createObjectURL(audioBlob);
+    const audio = new Audio(audioUrl);
+    
+    audio.onended = () => {
+      URL.revokeObjectURL(audioUrl);
+      window.dispatchEvent(new CustomEvent('ai-speech-end'));
+    };
+    
+    await audio.play();
+  } catch (error) {
+    console.error('ElevenLabs synthesis error:', error);
+    fallbackToWebSpeech(text);
+  }
+}
+
+// Fallback to browser speech synthesis
+function fallbackToWebSpeech(text: string) {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.9;
+    utterance.pitch = 1.1;
+    utterance.volume = 0.8;
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
 export function useWebSocket() {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<WebSocket | null>(null);
@@ -45,30 +90,9 @@ export function useWebSocket() {
           // Trigger avatar speaking animation
           window.dispatchEvent(new CustomEvent('ai-speaking'));
           
-          // Speak the AI response out loud
-          if (data.message?.content && 'speechSynthesis' in window) {
-            // Cancel any ongoing speech
-            window.speechSynthesis.cancel();
-            
-            const utterance = new SpeechSynthesisUtterance(data.message.content);
-            utterance.rate = 0.9;
-            utterance.pitch = 1.1;
-            utterance.volume = 0.8;
-            
-            // Use a female voice if available
-            const voices = window.speechSynthesis.getVoices();
-            const femaleVoice = voices.find(voice => 
-              voice.name.toLowerCase().includes('female') ||
-              voice.name.toLowerCase().includes('samantha') ||
-              voice.name.toLowerCase().includes('alex') ||
-              (voice.lang.startsWith('en-') && voice.localService)
-            );
-            
-            if (femaleVoice) {
-              utterance.voice = femaleVoice;
-            }
-            
-            window.speechSynthesis.speak(utterance);
+          // Speak the AI response out loud using ElevenLabs
+          if (data.message?.content) {
+            speakWithElevenLabs(data.message.content);
           }
         }
       } catch (error) {
