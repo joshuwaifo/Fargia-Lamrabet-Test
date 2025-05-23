@@ -31,7 +31,16 @@ export default function DocumentUpload({ documents }: DocumentUploadProps) {
         formData.append('documents', file);
       });
       
-      const response = await apiRequest('POST', '/api/documents/upload', formData);
+      const response = await fetch('/api/documents/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Upload failed');
+      }
+      
       return response.json();
     },
     onSuccess: () => {
