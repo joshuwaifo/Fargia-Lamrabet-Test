@@ -156,20 +156,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ElevenLabs voice synthesis endpoint
-  app.post("/api/voice/synthesize", async (req, res) => {
+  // ElevenLabs voice synthesis endpoint - MUST be before Vite middleware
+  app.post("/api/voice/synthesize", express.raw({ type: 'application/json', limit: '10mb' }), async (req, res) => {
     try {
-      const { text } = req.body;
+      console.log("ElevenLabs endpoint hit!");
+      const body = JSON.parse(req.body.toString());
+      const { text } = body;
       
       if (!text) {
+        console.log("No text provided");
         return res.status(400).json({ message: "Text is required" });
       }
 
       const apiKey = process.env.ELEVENLABS_API_KEY;
       if (!apiKey) {
+        console.log("No ElevenLabs API key");
         return res.status(500).json({ message: "ElevenLabs API key not configured" });
       }
 
+      console.log(`Synthesizing: "${text.substring(0, 50)}..."`);
+      
       // Use a professional female voice (Rachel is a popular choice)
       const voiceId = "21m00Tcm4TlvDq8ikWAM"; // Rachel voice ID
       
@@ -193,20 +199,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`ElevenLabs API error: ${response.status} ${response.statusText} - ${errorText}`);
         throw new Error(`ElevenLabs API error: ${response.statusText}`);
       }
 
       const audioBuffer = await response.arrayBuffer();
+      console.log(`Audio generated: ${audioBuffer.byteLength} bytes`);
       
       res.set({
         'Content-Type': 'audio/mpeg',
         'Content-Length': audioBuffer.byteLength.toString(),
+        'Cache-Control': 'no-cache'
       });
       
       res.send(Buffer.from(audioBuffer));
     } catch (error) {
       console.error("Voice synthesis error:", error);
-      res.status(500).json({ message: "Failed to synthesize voice" });
+      res.status(500).json({ message: "Failed to synthesize voice", error: error.message });
     }
   });
 
