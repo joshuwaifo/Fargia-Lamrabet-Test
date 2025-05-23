@@ -10,7 +10,7 @@ import { insertDocumentSchema, insertMessageSchema } from "@shared/schema";
 const upload = multer({
   dest: "uploads/",
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
+    fileSize: 50 * 1024 * 1024, // 50MB limit for larger documents
   },
   fileFilter: (req, file, cb) => {
     const allowedTypes = [
@@ -157,11 +157,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ElevenLabs voice synthesis endpoint - MUST be before Vite middleware
-  app.post("/api/voice/synthesize", express.raw({ type: 'application/json', limit: '10mb' }), async (req, res) => {
+  app.post("/api/voice/synthesize", async (req, res) => {
     try {
       console.log("ElevenLabs endpoint hit!");
-      const body = JSON.parse(req.body.toString());
-      const { text } = body;
+      const { text } = req.body;
       
       if (!text) {
         console.log("No text provided");

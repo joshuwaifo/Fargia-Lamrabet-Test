@@ -92,8 +92,8 @@ export function useVoice() {
   const startListening = () => {
     if (!isSupported) {
       toast({
-        title: "Speech recognition not supported",
-        description: "Your browser doesn't support speech recognition.",
+        title: "Voice input not available",
+        description: "Speech recognition isn't supported in this environment. You can still type your messages and hear AI responses!",
         variant: "destructive",
       });
       return;
@@ -101,7 +101,16 @@ export function useVoice() {
 
     if (recognitionRef.current && !isListening) {
       setTranscript("");
-      recognitionRef.current.start();
+      try {
+        recognitionRef.current.start();
+      } catch (error) {
+        console.error("Speech recognition error:", error);
+        toast({
+          title: "Voice input failed",
+          description: "Unable to start voice recognition. Please use text input instead.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
