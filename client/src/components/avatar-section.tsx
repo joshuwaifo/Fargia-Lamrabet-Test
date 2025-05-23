@@ -3,26 +3,77 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Video, Mic, Square, Circle } from "lucide-react";
 import { useVoice } from "@/hooks/use-voice";
+import avatarImage from "@assets/image_1747988403393.png";
 
 export default function AvatarSection() {
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [mouthState, setMouthState] = useState(0); // 0 = closed, 1 = open
   const audioRef = useRef<HTMLAudioElement>(null);
   const { startListening, stopListening, isListening } = useVoice();
+  const animationRef = useRef<number>();
 
-  // Simulate speaking animation when audio is playing
+  // Animate lip sync when speaking
   useEffect(() => {
-    const handleSpeech = () => {
+    if (isSpeaking) {
+      const animateLips = () => {
+        // Create realistic mouth movement pattern
+        const time = Date.now() * 0.01;
+        const mouthMovement = Math.sin(time) * 0.5 + 0.5; // 0 to 1
+        setMouthState(mouthMovement);
+        animationRef.current = requestAnimationFrame(animateLips);
+      };
+      animateLips();
+    } else {
+      setMouthState(0); // Close mouth when not speaking
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    }
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [isSpeaking]);
+
+  // Handle speaking events
+  useEffect(() => {
+    const handleSpeechStart = () => {
       setIsSpeaking(true);
-      setTimeout(() => setIsSpeaking(false), 3000); // 3 second speaking animation
+    };
+
+    const handleSpeechEnd = () => {
+      setIsSpeaking(false);
+    };
+
+    // Listen for speech synthesis events
+    const handleSpeechSynthesis = () => {
+      if ('speechSynthesis' in window) {
+        // Listen for when speech starts and ends
+        const checkSpeaking = () => {
+          if (window.speechSynthesis.speaking) {
+            setIsSpeaking(true);
+          } else {
+            setIsSpeaking(false);
+          }
+        };
+        
+        const interval = setInterval(checkSpeaking, 100);
+        return () => clearInterval(interval);
+      }
     };
 
     // Listen for custom events from the chat interface
-    const handleAISpeech = () => handleSpeech();
-    window.addEventListener('ai-speaking', handleAISpeech);
+    window.addEventListener('ai-speaking', handleSpeechStart);
+    
+    // Start monitoring speech synthesis
+    const cleanup = handleSpeechSynthesis();
 
     return () => {
-      window.removeEventListener('ai-speaking', handleAISpeech);
+      window.removeEventListener('ai-speaking', handleSpeechStart);
+      cleanup?.();
     };
   }, []);
 
@@ -65,13 +116,43 @@ export default function AvatarSection() {
         </div>
 
         {/* Avatar Video Container */}
-        <div className="relative bg-gradient-to-br from-neutral-100 to-neutral-200 aspect-video">
+        <div className="relative bg-gradient-to-br from-neutral-100 to-neutral-200 aspect-video overflow-hidden">
           {isVideoEnabled ? (
-            <img
-              src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600"
-              alt="AI Strategy Advisor Avatar"
-              className="absolute inset-0 w-full h-full object-cover object-center"
-            />
+            <div className="relative w-full h-full">
+              {/* Base Avatar Image */}
+              <img
+                src={avatarImage}
+                alt="AI Strategy Advisor Avatar"
+                className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-75"
+                style={{
+                  transform: isSpeaking ? `scale(${1 + mouthState * 0.02})` : 'scale(1)',
+                }}
+              />
+              
+              {/* Animated Mouth Overlay for Lip Sync */}
+              {isSpeaking && (
+                <div 
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: `radial-gradient(ellipse ${20 + mouthState * 15}px ${8 + mouthState * 12}px at 50% 75%, 
+                      rgba(0,0,0,${0.3 + mouthState * 0.4}) 0%, 
+                      transparent 70%)`,
+                  }}
+                />
+              )}
+              
+              {/* Subtle face glow when speaking */}
+              {isSpeaking && (
+                <div 
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: `radial-gradient(circle at 50% 40%, 
+                      rgba(99, 102, 241, ${0.1 + mouthState * 0.1}) 0%, 
+                      transparent 50%)`,
+                  }}
+                />
+              )}
+            </div>
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">

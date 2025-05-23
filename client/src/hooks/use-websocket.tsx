@@ -44,6 +44,32 @@ export function useWebSocket() {
           
           // Trigger avatar speaking animation
           window.dispatchEvent(new CustomEvent('ai-speaking'));
+          
+          // Speak the AI response out loud
+          if (data.message?.content && 'speechSynthesis' in window) {
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(data.message.content);
+            utterance.rate = 0.9;
+            utterance.pitch = 1.1;
+            utterance.volume = 0.8;
+            
+            // Use a female voice if available
+            const voices = window.speechSynthesis.getVoices();
+            const femaleVoice = voices.find(voice => 
+              voice.name.toLowerCase().includes('female') ||
+              voice.name.toLowerCase().includes('samantha') ||
+              voice.name.toLowerCase().includes('alex') ||
+              (voice.lang.startsWith('en-') && voice.localService)
+            );
+            
+            if (femaleVoice) {
+              utterance.voice = femaleVoice;
+            }
+            
+            window.speechSynthesis.speak(utterance);
+          }
         }
       } catch (error) {
         console.error("Failed to parse WebSocket message:", error);
