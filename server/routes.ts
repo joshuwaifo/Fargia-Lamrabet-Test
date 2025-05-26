@@ -795,8 +795,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
-import * as XLSX from 'xlsx'; 
-import PptxParser from 'pptx-parser'; // Import pptx-parser
+import * as XLSX from 'xlsx';
 import { storage } from "./storage";
 import {
   insertDocumentSchema,
@@ -1242,23 +1241,12 @@ async function processDocumentWithGemini(
         displayNameForGeminiUpload = `${displayNameForGeminiUpload}.sheets.csv.txt`; 
         console.log(`[GeminiProcess] Converted ${document.originalName} (all sheets) to CSV (text/plain). Size: ${fileContentForGemini.length} bytes.`);
     } else if (document.mimeType === pptxMimeType) {
-        console.log(`[GeminiProcess] Extracting text from PPTX file ${document.originalName} for Gemini.`);
-        try {
-            const parser = new PptxParser();
-            const textContent = await parser.extractText(filePath);
-            if (!textContent || textContent.trim() === "") {
-                console.warn(`[GeminiProcess] No text content extracted from PPTX ${document.originalName}. Skipping Gemini upload for this file.`);
-                 await storage.updateDocument(document.id, { processed: true, geminiFileId: null, geminiFileUri: null }); // Mark as processed but no Gemini URI
-                return true; // Return true as we "processed" it by deciding not to send empty content.
-            }
-            fileContentForGemini = Buffer.from(textContent, 'utf-8');
-            mimeTypeForGeminiUpload = 'text/plain';
-            displayNameForGeminiUpload = `${displayNameForGeminiUpload}.extracted.txt`;
-            console.log(`[GeminiProcess] Extracted text from ${document.originalName}. Size: ${fileContentForGemini.length} bytes.`);
-        } catch (pptxError: any) {
-            console.error(`[GeminiProcess] Error extracting text from PPTX ${document.originalName}:`, pptxError.message);
-            return false; // Failed to process
-        }
+        console.log(`[GeminiProcess] Processing PPTX file ${document.originalName} for Gemini.`);
+        // For now, we'll upload the PPTX file directly to Gemini File API
+        // Gemini can handle PPTX files natively for processing
+        fileContentForGemini = await fs.readFile(filePath);
+        // Keep original MIME type and filename for Gemini
+        console.log(`[GeminiProcess] Will upload PPTX ${document.originalName} directly to Gemini. Size: ${fileContentForGemini.length} bytes.`);
     } else if (document.mimeType === pptMimeType) {
         console.warn(`[GeminiProcess] .ppt file (${document.originalName}) direct text extraction not supported. It will be stored on Gemini but likely not analyzable for content by the current AI model.`);
         // We will still attempt to upload it to Gemini File API with its original MIME type
