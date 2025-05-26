@@ -1,10 +1,37 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bot, FileText, MessageSquare, Sparkles } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Bot, FileText, MessageSquare, Sparkles, Lock } from "lucide-react";
 
 export default function Landing() {
-  const handleLogin = () => {
-    window.location.href = "/api/login";
+  const [password, setPassword] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleLogin = async () => {
+    if (!password.trim()) {
+      setError("Please enter the access password");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+
+      if (response.ok) {
+        window.location.reload();
+      } else {
+        setError("Invalid password. Please try again.");
+      }
+    } catch (error) {
+      setError("Login failed. Please try again.");
+    }
   };
 
   return (
@@ -18,13 +45,53 @@ export default function Landing() {
             Upload your documents and chat with an intelligent AI assistant that analyzes 
             and provides insights from your files with advanced voice capabilities.
           </p>
-          <Button 
-            onClick={handleLogin}
-            size="lg"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
-          >
-            Get Started
-          </Button>
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                size="lg"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
+              >
+                Get Started
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Lock className="w-5 h-5" />
+                  Access Required
+                </DialogTitle>
+                <DialogDescription>
+                  Enter the access password to use the AI Document Assistant
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter access password"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setError("");
+                    }}
+                    onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                  />
+                  {error && (
+                    <p className="text-sm text-red-600">{error}</p>
+                  )}
+                </div>
+                <Button 
+                  onClick={handleLogin}
+                  className="w-full"
+                  disabled={!password.trim()}
+                >
+                  Access Application
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 mb-16">

@@ -35,17 +35,32 @@ export async function setupAuth(app: Express) {
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
-  // Auth routes - Demo authentication for testing
-  app.get("/api/login", (req, res) => {
-    // Create a demo user session to show the authenticated experience
-    req.session.user = {
-      id: "demo-user-123",
-      email: "demo@replit.com",
-      firstName: "Demo",
-      lastName: "User"
-    };
+  // Generated secure access password for the AI Document Assistant
+  const ACCESS_PASSWORD = "AI-Doc-2024-Secure#789";
+  
+  // Auth routes - Password-based authentication
+  app.post("/api/login", (req, res) => {
+    const { password } = req.body;
     
-    console.log("Demo user logged in:", req.session.user);
+    if (password === ACCESS_PASSWORD) {
+      // Create authenticated user session
+      req.session.user = {
+        id: "authenticated-user",
+        email: "user@aidocument.assistant",
+        firstName: "AI Document",
+        lastName: "User"
+      };
+      
+      console.log("User authenticated successfully");
+      res.status(200).json({ success: true });
+    } else {
+      console.log("Failed login attempt with password:", password);
+      res.status(401).json({ error: "Invalid password" });
+    }
+  });
+
+  app.get("/api/login", (req, res) => {
+    // Legacy GET route - redirect to home
     res.redirect("/");
   });
 
