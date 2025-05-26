@@ -35,35 +35,23 @@ export async function setupAuth(app: Express) {
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
-  // Auth routes
+  // Auth routes - Demo authentication for testing
   app.get("/api/login", (req, res) => {
-    // Redirect to Replit authentication
-    const replitAuthUrl = `https://replit.com/oidc/authorize?client_id=${process.env.REPL_ID}&response_type=code&scope=openid%20profile%20email&redirect_uri=${encodeURIComponent(`https://${req.hostname}/api/callback`)}`;
-    res.redirect(replitAuthUrl);
+    // Create a demo user session to show the authenticated experience
+    req.session.user = {
+      id: "demo-user-123",
+      email: "demo@replit.com",
+      firstName: "Demo",
+      lastName: "User"
+    };
+    
+    console.log("Demo user logged in:", req.session.user);
+    res.redirect("/");
   });
 
   app.get("/api/callback", async (req, res) => {
-    // Handle the OAuth callback
-    const { code } = req.query;
-    
-    if (!code) {
-      return res.redirect("/?error=auth_failed");
-    }
-
-    try {
-      // For now, create a mock user session until we get the full OAuth implementation
-      req.session.user = {
-        id: "authenticated-user",
-        email: "user@replit.com",
-        firstName: "Replit",
-        lastName: "User"
-      };
-      
-      res.redirect("/");
-    } catch (error) {
-      console.error("Auth callback error:", error);
-      res.redirect("/?error=auth_failed");
-    }
+    // This would handle the real OAuth callback in production
+    res.redirect("/");
   });
 
   app.get("/api/logout", (req, res) => {
