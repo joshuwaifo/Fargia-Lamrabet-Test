@@ -887,7 +887,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
 import * as XLSX from "xlsx";
-import mammoth from "mammoth"; // Import mammoth
+// import mammoth from "mammoth"; // Import mammoth - temporarily commented out
 import { storage } from "./storage";
 import {
   insertDocumentSchema,
@@ -966,10 +966,13 @@ export async function registerRoutes(app: Express): Promise<HttpServer> {
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      // In development, this would return actual user data from Replit auth
-      const userId = req.user?.claims?.sub || "dev-user";
-      const user = await storage.getUser(userId);
-      res.json(user);
+      // Return the authenticated user from session
+      const user = req.session?.user;
+      if (user) {
+        res.json(user);
+      } else {
+        res.status(401).json({ message: "Not authenticated" });
+      }
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
