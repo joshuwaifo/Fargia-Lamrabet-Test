@@ -3,7 +3,8 @@ import DocumentUpload from "@/components/document-upload";
 import AvatarSection from "@/components/avatar-section";
 import ChatInterface from "@/components/chat-interface";
 import ProcessingStatus from "@/components/processing-status";
-import { Brain, Settings, Circle } from "lucide-react";
+import { Brain, Settings, Circle, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const { data: documentsData } = useQuery({
@@ -40,6 +41,15 @@ export default function Home() {
               <button className="p-2 text-neutral-600 hover:text-neutral-900 transition-colors">
                 <Settings size={20} />
               </button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.location.href = "/api/logout"}
+                className="flex items-center space-x-2"
+              >
+                <LogOut size={16} />
+                <span>Logout</span>
+              </Button>
             </div>
           </div>
         </div>
