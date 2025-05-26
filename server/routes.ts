@@ -959,6 +959,23 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<HttpServer> {
+  // Setup authentication
+  const { setupAuth, isAuthenticated } = await import("./replitAuth");
+  await setupAuth(app);
+
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      // In development, this would return actual user data from Replit auth
+      const userId = req.user?.claims?.sub || "dev-user";
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
   // --- Document Upload Endpoint ---
   app.post(
     "/api/documents/upload",
