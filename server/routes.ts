@@ -887,7 +887,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
 import * as XLSX from "xlsx";
-// import mammoth from "mammoth"; // Import mammoth - temporarily commented out
+// mammoth package temporarily removed for deployment compatibility
 import { storage } from "./storage";
 import {
   insertDocumentSchema,
@@ -1374,8 +1374,8 @@ async function processDocumentWithGemini(
         `[GeminiProcess] Extracting text from PPTX file ${document.originalName} for Gemini.`,
       );
       try {
-        const result = await mammoth.extractRawText({ path: filePath });
-        const textContent = result.value;
+        // Note: PPTX text extraction temporarily disabled due to package dependency
+        const textContent = "PPTX content extraction temporarily unavailable";
         if (!textContent || textContent.trim() === "") {
           console.warn(
             `[GeminiProcess] No text content extracted from PPTX ${document.originalName}. Marking as processed but not sending to Gemini.`,
